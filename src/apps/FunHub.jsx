@@ -7,26 +7,21 @@ export default function FunHub() {
   const [timeLeft, setTimeLeft] = useState(10);
   const [targetPos, setTargetPos] = useState({ top: '50%', left: '50%' });
 
-  // LEVEL 3 STATE: Initialize straight from browser hardware storage memory
   const [highScore, setHighScore] = useState(() => {
     const savedScore = localStorage.getItem('hubos_highscore');
     return savedScore ? parseInt(savedScore, 10) : 0;
   });
 
-  // Game countdown timer logic hook
   useEffect(() => {
     let timer;
     if (gameState === 'playing' && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
+      timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('ended');
     }
     return () => clearInterval(timer);
   }, [timeLeft, gameState]);
 
-  // LEVEL 3 STORAGE WRITER: Synchronize high score to device cache when score updates
   useEffect(() => {
     if (score > highScore) {
       setHighScore(score);
@@ -34,11 +29,10 @@ export default function FunHub() {
     }
   }, [score, highScore]);
 
-  // Teleport the click target randomly within the panel frame
   const moveTarget = () => {
-    // Tighter safety percentages keep the button from overlapping layout borders on mobile
-    const randomTop = Math.floor(Math.random() * 60) + 20; 
-    const randomLeft = Math.floor(Math.random() * 70) + 15;
+    // Highly constrained grid matrix specifically scaled to keep the touch zone in thumb-reach
+    const randomTop = Math.floor(Math.random() * 55) + 25; 
+    const randomLeft = Math.floor(Math.random() * 65) + 15;
     setTargetPos({ top: `${randomTop}%`, left: `${randomLeft}%` });
   };
 
@@ -49,52 +43,45 @@ export default function FunHub() {
     moveTarget();
   };
 
-  const handleTargetClick = () => {
-    if (gameState !== 'playing') return;
-    setScore((prev) => prev + 1);
-    moveTarget();
-  };
+  // Concentric ring calculation metrics for the countdown circle
+  const strokeDashoffset = ((10 - timeLeft) / 10) * (2 * Math.PI * 18);
 
   return (
-    <div className="space-y-4 max-w-5xl mx-auto p-1 pb-24 md:pb-6">
+    <div className="space-y-4 max-w-md mx-auto p-1 pb-24 md:pb-6 flex flex-col h-[calc(100vh-120px)] md:h-auto justify-between sm:justify-start">
       
-      {/* Header Profile - Stack vertically on mobile, row layout on desktop */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-900/40 p-4 rounded-2xl border border-slate-800/60">
-        <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-slate-100 flex items-center gap-2">
-            <Gamepad2 className="h-6 w-6 sm:h-8 sm:w-8 text-rose-500 animate-pulse" /> Fun Playground
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5 leading-tight">Local matrix execution loops and speed testing arrays.</p>
+      {/* Premium Header Layout */}
+      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between shadow-lg shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-rose-500/10 rounded-xl border border-rose-500/20">
+            <Gamepad2 className="h-5 w-5 text-rose-500" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-slate-100 tracking-tight">Reflex Arcade</h1>
+            <p className="text-[10px] text-slate-400">Thumb latency testing stream</p>
+          </div>
         </div>
-        
-        {/* Leaderboard Array Display */}
-        <div className="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl font-mono text-xs w-full sm:w-auto text-center sm:text-left shrink-0">
-          <span className="text-slate-500">ALL-TIME HIGH:</span>{' '}
-          <span className="text-rose-400 font-bold">{highScore} Pts</span>
+        <div className="bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-right font-mono shrink-0">
+          <span className="text-[9px] text-slate-500 block leading-none font-sans">HIGH</span>
+          <span className="text-xs font-bold text-rose-400">{highScore}</span>
         </div>
       </div>
 
-      {/* Main Gaming Terminal Frame - Dynamically scales height safely */}
-      <div className="relative w-full h-[65vh] sm:h-[450px] md:h-96 bg-slate-950 border border-slate-900 rounded-2xl flex flex-col items-center justify-center overflow-hidden shadow-inner p-4 touch-none">
-        
-        {/* Subtle grid background tracking layout line overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-20 pointer-events-none" />
+      {/* Main Container - Automatically scales up via flex-1 */}
+      <div className="relative w-full flex-1 min-h-[340px] bg-slate-950 border border-slate-900 rounded-2xl flex flex-col items-center justify-center overflow-hidden p-4 shadow-2xl">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:2.5rem_2.5rem] opacity-20 pointer-events-none" />
 
-        {/* STATE: IDLE / START SCREEN */}
+        {/* STATE: IDLE SCREEN */}
         {gameState === 'idle' && (
-          <div className="text-center安全 context z-10 space-y-4 max-w-sm mx-auto px-2">
-            <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto shadow-lg">
-              <Zap className="h-6 w-6 text-rose-500" />
+          <div className="text-center z-10 space-y-4 max-w-xs px-2 animate-fadeIn">
+            <div className="relative w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-center mx-auto shadow-md">
+              <Zap className="h-5 w-5 text-rose-500 animate-pulse" />
             </div>
-            <h3 className="text-lg font-bold text-slate-200">Reflex Matrix Engine</h3>
-            <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
-              Tap the shifting neon anchor vectors as fast as possible before the 10-second buffer loop expires.
-            </p>
-            <button
-              onClick={startGame}
-              className="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-rose-600/20 transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
-            >
-              <Play className="h-3.5 w-3.5 fill-white" /> Initialize Grid Session
+            <div>
+              <h3 className="text-sm font-bold text-slate-200">Matrix Engine v1.2</h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed mt-1">Tap moving anchors inside the dynamic boundary profile before the timer loop expires.</p>
+            </div>
+            <button onClick={startGame} className="w-full py-3 bg-gradient-to-r from-rose-600 to-pink-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/20 transition cursor-pointer">
+              Launch Session
             </button>
           </div>
         )}
@@ -102,41 +89,46 @@ export default function FunHub() {
         {/* STATE: PLAYING MODE PANEL ACTIVE */}
         {gameState === 'playing' && (
           <>
-            {/* Live Counter Tracking Overlays - Shifted down safely away from mobile notches */}
-            <div className="absolute top-3 left-4 font-mono text-xs tracking-wider text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">
+            {/* Live Counter Tracking Overlays */}
+            <div className="absolute top-3 left-3 font-mono text-xs text-slate-400 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800/80 shadow-md">
               SCORE: <span className="text-rose-400 font-bold">{score}</span>
             </div>
-            <div className="absolute top-3 right-4 font-mono text-xs tracking-wider text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">
-              LOOP: <span className={`font-bold ${timeLeft <= 3 ? 'text-rose-500 animate-pulse' : 'text-emerald-400'}`}>{timeLeft}s</span>
+            
+            {/* SVG Native Floating Timer Ring */}
+            <div className="absolute top-3 right-3 flex items-center justify-center bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 shadow-md">
+              <svg className="w-7 h-7 transform -rotate-90">
+                <circle cx="14" cy="14" r="11" stroke="#1e293b" strokeWidth="2.5" fill="transparent" />
+                <circle cx="14" cy="14" r="11" stroke="#f43f5e" strokeWidth="2.5" fill="transparent" strokeDasharray={2 * Math.PI * 11} strokeDashoffset={((10 - timeLeft) / 10) * (2 * Math.PI * 11)} className="transition-all duration-1000 ease-linear" />
+              </svg>
+              <span className="absolute text-[10px] font-mono font-bold text-slate-300">{timeLeft}</span>
             </div>
 
             {/* Target Node Button Trigger */}
             <button
               onClick={handleTargetClick}
               style={{ top: targetPos.top, left: targetPos.left }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-rose-500 rounded-xl border-2 border-white text-white flex items-center justify-center font-bold shadow-[0_0_25px_#f43f5e] active:scale-90 transition-all duration-75 cursor-pointer"
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-11 h-11 bg-rose-500 rounded-xl border-2 border-white text-white flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.6)] active:scale-90 transition-all duration-75 cursor-pointer"
             >
-              <Zap className="h-5 w-5 fill-white" />
+              <Zap className="h-4 w-4 fill-white text-white" />
             </button>
           </>
         )}
 
         {/* STATE: GAME ENDED REPORT */}
         {gameState === 'ended' && (
-          <div className="text-center z-10 space-y-4 max-w-sm mx-auto px-2">
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto">
-              <ShieldAlert className="h-6 w-6 text-amber-500" />
+          <div className="text-center z-10 space-y-4 max-w-xs px-2 animate-fadeIn">
+            <div className="bg-slate-900 border border-slate-800 p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto shadow-md">
+              <ShieldAlert className="h-5 w-5 text-amber-500" />
             </div>
-            <h3 className="text-lg font-bold text-slate-200">Session Expired</h3>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-4 max-w-xs mx-auto">
-              <span className="text-[10px] text-slate-500 block">Matches Captured</span>
-              <span className="text-2xl font-mono font-extrabold text-rose-400">{score}</span>
+            <div>
+              <h3 className="text-sm font-bold text-slate-200">Loop Session Ended</h3>
+              <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-2 px-4 mt-2 max-w-[160px] mx-auto">
+                <span className="text-[9px] text-slate-500 block uppercase tracking-wider">Captured</span>
+                <span className="text-xl font-mono font-extrabold text-rose-400">{score}</span>
+              </div>
             </div>
-            <button
-              onClick={startGame}
-              className="w-full sm:w-auto px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 hover:text-white font-semibold text-xs rounded-xl transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
-            >
-              <RotateCcw className="h-3.5 w-3.5" /> Reset Stream Loop
+            <button onClick={startGame} className="w-full py-3 bg-slate-900 border border-slate-800 text-slate-300 active:text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+              <RotateCcw className="h-3.5 w-3.5" /> Retry Session Loop
             </button>
           </div>
         )}
