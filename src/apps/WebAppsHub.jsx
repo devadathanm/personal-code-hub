@@ -1,9 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppWindow, ArrowLeftRight, Settings, Sliders } from 'lucide-react';
 
 export default function WebAppsHub() {
-  const [category, setCategory] = useState('length');
-  const [inputValue, setInputValue] = useState('1');
+  // LEVEL 3 STATE: Initialize from browser hardware storage or defaults
+  const [category, setCategory] = useState(() => {
+    return localStorage.getItem('hubos_web_category') || 'length';
+  });
+
+  const [inputValue, setInputValue] = useState(() => {
+    return localStorage.getItem('hubos_web_input') || '1';
+  });
+
+  // LEVEL 3 SYNCHRONIZERS: Automatically mirror data states to storage on changes
+  useEffect(() => {
+    localStorage.setItem('hubos_web_category', category);
+  }, [category]);
+
+  useEffect(() => {
+    localStorage.setItem('hubos_web_input', inputValue);
+  }, [inputValue]);
 
   // Multi-discipline conversion calculation matrix
   const convertUnits = () => {
@@ -58,8 +73,9 @@ export default function WebAppsHub() {
             <select 
               value={category}
               onChange={(e) => {
-                setCategory(e.target.value);
-                setInputValue(e.target.value === 'temperature' ? '100' : '1'); // Set clean defaults
+                const nextCategory = e.target.value;
+                setCategory(nextCategory);
+                setInputValue(nextCategory === 'temperature' ? '100' : '1');
               }}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer"
             >
