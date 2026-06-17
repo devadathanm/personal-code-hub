@@ -1,3 +1,15 @@
+@layer utilities {
+  /* Enforces smooth native momentum scrolling on iOS viewports */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+html {
+  /* Prevents iOS from automatically scaling text down when rotating orientation */
+  -webkit-text-size-adjust: 100%;
+}
+
 @import "tailwindcss";
 
 html,

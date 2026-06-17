@@ -28,11 +28,13 @@ export default function EngineeringHub() {
     localStorage.setItem('hubos_eng_dim2', dim2);
   }, [dim2]);
 
-  // Math engine for cross-sectional properties
+  // Math engine for advanced cross-sectional & structural properties
   const calculateProperties = () => {
     let area = 0;
     let ix = 0;
     let iy = 0;
+    let zx = 0; // Section Modulus
+    let rx = 0; // Radius of Gyration
 
     const w = parseFloat(dim1) || 0;
     const h = parseFloat(dim2) || 0;
@@ -41,6 +43,11 @@ export default function EngineeringHub() {
       area = w * h;
       ix = (w * Math.pow(h, 3)) / 12;
       iy = (h * Math.pow(w, 3)) / 12;
+      
+      // Zx = Ix / y_max (where y_max = h / 2)
+      zx = h > 0 ? ix / (h / 2) : 0;
+      // rx = sqrt(Ix / Area)
+      rx = area > 0 ? Math.sqrt(ix / area) : 0;
     } else if (shape === 'pipe') {
       // dim1 = Outer Diameter (D), dim2 = Inner Diameter (d)
       const rOut = w / 2;
@@ -48,19 +55,26 @@ export default function EngineeringHub() {
       area = Math.PI * (Math.pow(rOut, 2) - Math.pow(rIn, 2));
       ix = (Math.PI * (Math.pow(w, 4) - Math.pow(h, 4))) / 64;
       iy = ix; // Symmetrical
+      
+      // Zx = Ix / rOut (where rOut = w / 2)
+      zx = w > 0 ? ix / (w / 2) : 0;
+      rx = area > 0 ? Math.sqrt(ix / area) : 0;
     }
 
     return {
       area: area.toFixed(2),
       ix: ix.toExponential(3),
-      iy: iy.toExponential(3)
+      iy: iy.toExponential(3),
+      zx: zx.toExponential(3),
+      rx: rx.toFixed(2)
     };
   };
 
   const results = calculateProperties();
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto p-2">
+    // pb-24 handles safe spacing above iPhone home indicators across mobile viewports
+    <div className="space-y-6 max-w-5xl mx-auto p-2 pb-24 md:pb-6 scroll-touch">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 flex items-center gap-2">
@@ -80,7 +94,7 @@ export default function EngineeringHub() {
           
           {/* Shape Select */}
           <div className="space-y-1.5">
-            <label className="text-xs text-slate-500 font-medium">Profile Profile Shape</label>
+            <label className="text-xs text-slate-500 font-medium">Profile Shape</label>
             <select 
               value={shape} 
               onChange={(e) => setShape(e.target.value)}
@@ -125,8 +139,8 @@ export default function EngineeringHub() {
               <Layers className="h-4 w-4 text-emerald-400" /> Geometric Properties Telemetry
             </h3>
 
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Results Grid - Expanded to 5 items to hold Zx and rx */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-900">
                 <span className="text-xs text-slate-500 block">Cross-Sectional Area</span>
                 <span className="text-xl font-mono font-bold text-emerald-400 mt-1 block select-all">{results.area}</span>
@@ -144,12 +158,24 @@ export default function EngineeringHub() {
                 <span className="text-xl font-mono font-bold text-purple-400 mt-1 block select-all">{results.iy}</span>
                 <span className="text-[10px] text-slate-600 font-mono">mm⁴</span>
               </div>
+
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-900">
+                <span className="text-xs text-slate-500 block">Section Modulus (Zx)</span>
+                <span className="text-xl font-mono font-bold text-amber-400 mt-1 block select-all">{results.zx}</span>
+                <span className="text-[10px] text-slate-600 font-mono">mm³</span>
+              </div>
+
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-900">
+                <span className="text-xs text-slate-500 block">Radius of Gyration (rx)</span>
+                <span className="text-xl font-mono font-bold text-cyan-400 mt-1 block select-all">{results.rx}</span>
+                <span className="text-[10px] text-slate-600 font-mono">mm</span>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 border-t border-slate-800/60 pt-4 text-xs text-slate-500 flex justify-between items-center">
-            <span>Formula Set: {shape === 'rectangle' ? 'b·h³ / 12' : 'π·(D⁴ - d⁴) / 64'}</span>
-            <span className="text-blue-500 font-medium">● Real-time Solver Engaged</span>
+          <div className="mt-6 border-t border-slate-800/60 pt-4 text-xs text-slate-500 flex justify-between items-center gap-2 flex-wrap">
+            <span>Formula Matrix: {shape === 'rectangle' ? 'b·h³ / 12 | Zx = Ix / (h/2)' : 'π·(D⁴ - d⁴) / 64 | Zx = Ix / (D/2)'}</span>
+            <span className="text-blue-500 font-medium whitespace-nowrap">● Real-time Solver Engaged</span>
           </div>
         </div>
 
