@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #020617; /* Sleek Slate 950 */
+  color: #f8fafc;            /* Crisp Slate 50 text */
+  font-family: system-ui, -apple-system, sans-serif;
+  overscroll-behavior: none;
+}
