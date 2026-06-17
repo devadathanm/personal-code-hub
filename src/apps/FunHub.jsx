@@ -4,9 +4,14 @@ import { Gamepad2, Play, RotateCcw, ShieldAlert, Zap } from 'lucide-react';
 export default function FunHub() {
   const [gameState, setGameState] = useState('idle'); // idle, playing, ended
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(10);
   const [targetPos, setTargetPos] = useState({ top: '50%', left: '50%' });
+
+  // LEVEL 3 STATE: Initialize straight from browser hardware storage memory
+  const [highScore, setHighScore] = useState(() => {
+    const savedScore = localStorage.getItem('hubos_highscore');
+    return savedScore ? parseInt(savedScore, 10) : 0;
+  });
 
   // Game countdown timer logic hook
   useEffect(() => {
@@ -17,10 +22,17 @@ export default function FunHub() {
       }, 1000);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('ended');
-      if (score > highScore) setHighScore(score);
     }
     return () => clearInterval(timer);
   }, [timeLeft, gameState]);
+
+  // LEVEL 3 STORAGE WRITER: Synchronize high score to device cache when score updates
+  useEffect(() => {
+    if (score > highScore) {
+      setHighScore(score);
+      localStorage.setItem('hubos_highscore', score.toString());
+    }
+  }, [score, highScore]);
 
   // Teleport the click target randomly within the panel frame
   const moveTarget = () => {
@@ -100,7 +112,7 @@ export default function FunHub() {
             <button
               onClick={handleTargetClick}
               style={{ top: targetPos.top, left: targetPos.left }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-rose-500 rounded-xl border-2 border-white text-white flex items-center justify-center font-bold shadow-[0_0_20px_#f43f5e] hover:scale-110 active:scale-95 transition-all duration-100 cursor-pointer animate-none"
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-rose-500 rounded-xl border-2 border-white text-white flex items-center justify-center font-bold shadow-[0_0_20px_#f43f5e] hover:scale-110 active:scale-95 transition-all duration-100 cursor-pointer"
             >
               <Zap className="h-5 w-5 fill-white" />
             </button>
