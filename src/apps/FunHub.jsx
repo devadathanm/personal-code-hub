@@ -1,107 +1,109 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Gamepad2, Play, RotateCcw, ShieldAlert, Trophy } from 'lucide-react';
+import { Gamepad2, Play, RotateCcw, ShieldAlert, Trophy, Waves } from 'lucide-react';
 
 export default function FunHub() {
   const [gameState, setGameState] = useState('idle'); // idle, playing, ended
   const [score, setScore] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [birdY, setBirdY] = useState(150);
+  const [boatY, setBoatY] = useState(140);
   const [velocity, setVelocity] = useState(0);
   const [pipes, setPipes] = useState([]);
+  const [splashes, setSplashes] = useState([]); // Visual particle ripple array
 
   const [highScore, setHighScore] = useState(() => {
-    const saved = localStorage.getItem('hubos_bird_highscore');
+    const saved = localStorage.getItem('hubos_vallam_highscore');
     return saved ? parseInt(saved, 10) : 0;
   });
 
-  // Base physics baselines (Slower, smoother fall curve for mobile screens)
-  const GRAVITY = 0.45;
-  const JUMP_STRENGTH = -6.5;
+  const GRAVITY = 0.42; 
+  const ROW_STRENGTH = -6.2; // Smooth rowing jump glide
   const CANVAS_HEIGHT = 320;
 
-  // LEVEL CONFIGURATION MATRIX (Calculated dynamically based on currentLevel)
-  const pipeSpeed = 2 + (currentLevel * 0.4); // Starts slower (2.4), speeds up gradually
-  const gapSize = Math.max(130 - (currentLevel * 4), 95); // Starts wide (126px), shrinks slowly
-  const spawnRate = Math.max(100 - (currentLevel * 5), 65); // Pipes arrive faster as levels climb
+  // Level tuning matrix
+  const pipeSpeed = 2.2 + (currentLevel * 0.3);
+  const gapSize = Math.max(135 - (currentLevel * 4), 100);
+  const spawnRate = Math.max(95 - (currentLevel * 4), 65);
 
   const gameLoopRef = useRef();
   const frameCountRef = useRef(0);
 
-  // Dynamic Level Trigger: Every 5 points, increase the challenge rating
   useEffect(() => {
     const calculatedLevel = Math.floor(score / 5) + 1;
-    if (calculatedLevel !== currentLevel) {
-      setCurrentLevel(calculatedLevel);
-    }
+    if (calculatedLevel !== currentLevel) setCurrentLevel(calculatedLevel);
   }, [score, currentLevel]);
 
-  // Jump Action Handler
-  const handleJump = (e) => {
+  // Rowing Action Trigger (Tap)
+  const handleRow = (e) => {
     if (e) e.preventDefault();
     if (gameState !== 'playing') return;
-    setVelocity(JUMP_STRENGTH);
+    
+    setVelocity(ROW_STRENGTH);
+    
+    // Spawn ripple particles at the boat's tail coordinate
+    setSplashes((prev) => [
+      ...prev,
+      { id: Date.now(), y: boatY + 12, x: 50, opacity: 1 }
+    ]);
   };
 
-  // Initialize Game Environment
   const startGame = () => {
     setScore(0);
     setCurrentLevel(1);
-    setBirdY(130);
+    setBoatY(120);
     setVelocity(0);
-    setPipes([{ x: 400, topHeight: 90, bottomHeight: 100 }]);
+    setPipes([{ x: 400, topHeight: 80, bottomHeight: 105 }]);
+    setSplashes([]);
     frameCountRef.current = 0;
     setGameState('playing');
   };
 
-  // Frame Rendering Loop
+  // Physics & Animation Pipeline Engine
   useEffect(() => {
     if (gameState !== 'playing') return;
 
     const updatePhysics = () => {
-      // 1. Bird Movement Vector
-      setBirdY((prevY) => {
+      // 1. Boat Hydrodynamics
+      setBoatY((prevY) => {
         const nextY = prevY + velocity;
-        if (nextY > CANVAS_HEIGHT - 24 || nextY < 0) {
+        if (nextY > CANVAS_HEIGHT - 28 || nextY < 0) {
           setGameState('ended');
-          return nextY > CANVAS_HEIGHT - 24 ? CANVAS_HEIGHT - 24 : 0;
+          return nextY > CANVAS_HEIGHT - 28 ? CANVAS_HEIGHT - 28 : 0;
         }
         return nextY;
       });
       setVelocity((prevVel) => prevVel + GRAVITY);
 
-      // 2. Obstacle Generation and Shifts
+      // 2. Clear out splash particles
+      setSplashes((prev) => 
+        prev
+          .map((s) => ({ ...s, x: s.x - 2, opacity: s.opacity - 0.05 }))
+          .filter((s) => s.opacity > 0)
+      );
+
+      // 3. Tree Obstacle Stream Loops
       frameCountRef.current += 1;
       setPipes((prevPipes) => {
-        let updatedPipes = prevPipes.map((pipe) => ({
-          ...pipe,
-          x: pipe.x - pipeSpeed,
-        }));
+        let updatedPipes = prevPipes.map((p) => ({ ...p, x: p.x - pipeSpeed }));
 
-        // Filter old pipes out & yield score increments
-        if (updatedPipes.length > 0 && updatedPipes[0].x < -45) {
+        if (updatedPipes.length > 0 && updatedPipes[0].x < -50) {
           updatedPipes.shift();
           setScore((s) => s + 1);
         }
 
-        // Spawn dynamic, completely randomized pipe positions
         if (frameCountRef.current % spawnRate === 0) {
-          const minHeight = 30;
-          const maxHeight = CANVAS_HEIGHT - gapSize - minHeight;
-          // Random generator ensures the gaps are never in the same sequence pattern
-          const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+          const minH = 40;
+          const maxH = CANVAS_HEIGHT - gapSize - minH;
+          const topHeight = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
           const bottomHeight = CANVAS_HEIGHT - topHeight - gapSize;
-          
           updatedPipes.push({ x: 360, topHeight, bottomHeight });
         }
-
         return updatedPipes;
       });
 
-      // 3. Precise Collision Intersect Engine
-      pipes.forEach((pipe) => {
-        // Checking if the bird bounding profile crosses into the horizontal pipe width boundary
-        if (pipe.x > 24 && pipe.x < 74) {
-          if (birdY < pipe.topHeight || birdY > CANVAS_HEIGHT - pipe.bottomHeight - 24) {
+      // 4. Structural Intersect Collision Matrix
+      pipes.forEach((p) => {
+        if (p.x > 25 && p.x < 75) {
+          if (boatY < p.topHeight || boatY > CANVAS_HEIGHT - p.bottomHeight - 24) {
             setGameState('ended');
           }
         }
@@ -112,123 +114,144 @@ export default function FunHub() {
 
     gameLoopRef.current = requestAnimationFrame(updatePhysics);
     return () => cancelAnimationFrame(gameLoopRef.current);
-  }, [gameState, velocity, birdY, pipes, pipeSpeed, gapSize, spawnRate]);
+  }, [gameState, velocity, boatY, pipes, pipeSpeed, gapSize, spawnRate]);
 
-  // Sync personal milestone scores to physical cache memory arrays
   useEffect(() => {
     if (score > highScore) {
       setHighScore(score);
-      localStorage.setItem('hubos_bird_highscore', score.toString());
+      localStorage.setItem('hubos_vallam_highscore', score.toString());
     }
   }, [score, highScore]);
 
   return (
     <div className="space-y-4 max-w-md mx-auto p-1 pb-24 md:pb-6 flex flex-col h-[calc(100vh-140px)] md:h-auto justify-between sm:justify-start select-none">
       
-      {/* Top Status HUD Board */}
-      <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex items-center justify-between shadow-xl shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-            <Gamepad2 className="h-5 w-5 text-emerald-400" />
+      {/* HUD Bar Dashboard */}
+      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between shadow-xl shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20">
+            <Waves className="h-5 w-5 text-amber-500 animate-pulse" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-slate-100 tracking-tight">Aero Stream Engine</h1>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">
-                Lv. {currentLevel}
-              </span>
-            </div>
+            <h1 className="text-sm font-black text-slate-100 tracking-tight flex items-center gap-1">
+              വള്ളം കളി <span className="text-amber-500 text-xs font-normal font-mono">v2.0</span>
+            </h1>
+            <p className="text-[10px] text-slate-400">Chundan Stream Simulation</p>
           </div>
         </div>
-        <div className="bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-right font-mono shrink-0 flex items-center gap-2">
-          <Trophy className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-          <div>
-            <span className="text-[8px] text-slate-500 block leading-none text-left">BEST</span>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+            LEVEL {currentLevel}
+          </span>
+          <div className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg text-right font-mono">
+            <span className="text-[8px] text-slate-500 block leading-none">BEST</span>
             <span className="text-xs font-bold text-slate-200">{highScore}</span>
           </div>
         </div>
       </div>
 
-      {/* Main Vector Rendering Screen Frame */}
+      {/* Main Backwater Arena Container */}
       <div 
-        onClick={handleJump}
-        onTouchStart={handleJump}
-        className="relative w-full h-80 bg-slate-950 border border-slate-900 rounded-2xl overflow-hidden shadow-2xl select-none touch-none cursor-pointer"
+        onClick={handleRow}
+        onTouchStart={handleRow}
+        className="relative w-full h-80 bg-gradient-to-b from-slate-950 via-slate-950 to-cyan-950/40 border border-slate-900 rounded-2xl overflow-hidden shadow-2xl select-none touch-none cursor-pointer"
       >
-        {/* Subtle grid system background wire lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-30 pointer-events-none" />
+        {/* Dynamic Water Wave Ripple Lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_90%,rgba(6,182,212,0.05)_90%)] bg-[size:100%_1.5rem] opacity-40 pointer-events-none" />
 
-        {/* HIGH VISIBILITY PIPES GENERATOR */}
-        {gameState !== 'idle' && pipes.map((pipe, index) => (
-          <React.Fragment key={index}>
-            {/* Top Tube Obstacle - Enhanced high-contrast styling */}
+        {/* RENDERING COCONUT TREES OBSTACLES */}
+        {gameState !== 'idle' && pipes.map((p, i) => (
+          <React.Fragment key={i}>
+            {/* Top Down Hanging Coconut Trunk */}
             <div 
-              style={{ width: '44px', height: `${pipe.topHeight}px`, left: `${pipe.x}px`, top: 0 }}
-              className="absolute bg-gradient-to-b from-slate-900 to-slate-950 border-b-4 border-x border-emerald-500/80 rounded-b-xl shadow-[0_4px_15px_rgba(16,185,129,0.2)]"
-            />
-            {/* Bottom Tube Obstacle */}
+              style={{ width: '40px', height: `${p.topHeight}px`, left: `${p.x}px`, top: 0 }}
+              className="absolute bg-gradient-to-b from-slate-900 via-amber-950/40 to-slate-900 border-b-8 border-x border-amber-700 rounded-b-lg shadow-lg"
+            >
+              {/* Palm Leaves effect anchor box */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-3 bg-gradient-to-r from-emerald-600 to-green-600 rounded-full blur-[1px]" />
+            </div>
+            {/* Bottom Up Coconut Tree Trunk */}
             <div 
-              style={{ width: '44px', height: `${pipe.bottomHeight}px`, left: `${pipe.x}px`, bottom: 0 }}
-              className="absolute bg-gradient-to-t from-slate-900 to-slate-950 border-t-4 border-x border-emerald-500/80 rounded-t-xl shadow-[0_-4px_15px_rgba(16,185,129,0.2)]"
-            />
+              style={{ width: '40px', height: `${p.bottomHeight}px`, left: `${p.x}px`, bottom: 0 }}
+              className="absolute bg-gradient-to-t from-slate-900 via-amber-950/40 to-slate-900 border-t-8 border-x border-amber-700 rounded-t-lg shadow-lg"
+            >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-3 bg-gradient-to-r from-emerald-600 to-green-600 rounded-full blur-[1px]" />
+            </div>
           </React.Fragment>
         ))}
 
-        {/* HERO OBJECT: FLUID AVATAR NODES */}
+        {/* RENDERING WATER SPLASH PARTICLES */}
+        {splashes.map((s) => (
+          <div 
+            key={s.id}
+            style={{ top: `${s.y}px`, left: `${s.x}px`, opacity: s.opacity }}
+            className="absolute w-2 h-2 bg-cyan-400 rounded-full blur-[0.5px] pointer-events-none transition-all duration-75"
+          />
+        ))}
+
+        {/* RENDER CHUNDAN VALLAM HERO OBJECT */}
         {gameState === 'playing' && (
           <div 
-            style={{ top: `${birdY}px`, left: '44px' }}
-            className="absolute w-6 h-6 bg-emerald-400 border-2 border-white rounded-lg shadow-[0_0_15px_rgba(52,211,153,0.6)] flex items-center justify-center transition-transform duration-75"
+            style={{ top: `${boatY}px`, left: '44px', transform: `rotate(${Math.min(Math.max(velocity * 2.5, -20), 25)}deg)` }}
+            className="absolute w-10 h-5 bg-gradient-to-r from-amber-800 via-amber-900 to-amber-700 border border-amber-600 rounded-l-full rounded-r-2xl shadow-[0_4px_10px_rgba(245,158,11,0.2)] flex items-center justify-end px-1 transition-transform"
           >
-            <div className="w-1.5 h-1.5 bg-slate-950 rounded-full ml-1.5 mb-1" />
+            {/* Traditional Golden Stern/Bow Point */}
+            <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping absolute right-0" />
+            {/* Mini Rowers Row representation blocks */}
+            <div className="flex gap-0.5 opacity-60 mr-1.5">
+              <div className="w-0.5 h-2 bg-white/80 rounded-full rotate-12" />
+              <div className="w-0.5 h-2 bg-white/80 rounded-full rotate-12" />
+              <div className="w-0.5 h-2 bg-white/80 rounded-full rotate-12" />
+            </div>
           </div>
         )}
 
-        {/* RUNTIME DASH OVERLAYS: START CONTROLS */}
+        {/* LAYERS: IDLE SCREEN */}
         {gameState === 'idle' && (
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center text-center p-4 space-y-4 z-20">
-            <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center shadow-md">
-              <Play className="h-4 w-4 text-emerald-400 fill-emerald-400" />
+            <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center shadow-md">
+              <Waves className="h-5 w-5 text-amber-500" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-slate-200">Adaptive Stream Active</h3>
-              <p className="text-[11px] text-slate-400 max-w-[240px] mx-auto leading-relaxed">Tap anywhere to float. Score increments every 5 points scale difficulty parameters in real time.</p>
+              <h3 className="text-sm font-black text-slate-200 tracking-wide">കുട്ടനാട് അരീന</h3>
+              <p className="text-[11px] text-slate-400 max-w-[220px] mx-auto leading-normal">Tap anywhere to row your Snake Boat through the coconut groves. Don't hit the trees!</p>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); startGame(); }} className="w-full max-w-[180px] py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer">
-              Launch Stream Loop
+            <button onClick={(e) => { e.stopPropagation(); startGame(); }} className="w-full max-w-[180px] py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 cursor-pointer">
+              തയ്യാറാവുക (Start)
             </button>
           </div>
         )}
 
-        {/* RUNTIME DASH OVERLAYS: SCORING ENGINE COUNTER */}
+        {/* LAYERS: RUNTIME SCOREBOARD STRIP */}
         {gameState === 'playing' && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-xl font-mono text-xs font-bold text-slate-200 z-10 shadow-lg flex items-center gap-2">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-xl font-mono text-xs font-bold text-slate-200 z-10 shadow-lg flex items-center gap-1.5">
             <span className="text-[10px] text-slate-500 font-sans font-normal">SCORE</span>
-            <span className="text-emerald-400">{score}</span>
+            <span className="text-amber-500">{score}</span>
           </div>
         )}
 
-        {/* RUNTIME DASH OVERLAYS: DEFEAT SUMMARY SHEET */}
+        {/* LAYERS: CRASH TERMINAL REPORT */}
         {gameState === 'ended' && (
           <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center text-center p-4 space-y-4 z-20 animate-fadeIn">
             <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-full shadow-md">
               <ShieldAlert className="h-5 w-5 text-rose-500" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-slate-200">Simulation Interrupted</h3>
-              <div className="flex justify-center gap-3 mt-2">
+              <h3 className="text-sm font-bold text-slate-200">തകർന്നു (Game Over)</h3>
+              <div className="flex justify-center gap-2.5 mt-2">
                 <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-1 px-3 min-w-[70px]">
                   <span className="text-[8px] text-slate-500 block uppercase">Level</span>
-                  <span className="text-sm font-mono font-bold text-slate-300">{currentLevel}</span>
+                  <span className="text-xs font-mono font-bold text-slate-300">{currentLevel}</span>
                 </div>
                 <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-1 px-3 min-w-[70px]">
-                  <span className="text-[8px] text-slate-500 block uppercase">Yield</span>
-                  <span className="text-sm font-mono font-bold text-emerald-400">{score}</span>
+                  <span className="text-[8px] text-slate-500 block uppercase">Score</span>
+                  <span className="text-xs font-mono font-bold text-amber-500">{score}</span>
                 </div>
               </div>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); startGame(); }} className="w-full max-w-[180px] py-2.5 bg-slate-900 border border-slate-800 text-slate-200 font-bold text-xs rounded-xl shadow-md transition active:text-white flex items-center justify-center gap-1.5 cursor-pointer">
-              <RotateCcw className="h-3.5 w-3.5" /> Re-engage Loop
+            <button onClick={(e) => { e.stopPropagation(); startGame(); }} className="w-full max-w-[180px] py-2.5 bg-slate-900 border border-slate-800 text-slate-200 font-bold text-xs rounded-xl shadow-md active:text-white flex items-center justify-center gap-1.5 cursor-pointer">
+              <RotateCcw className="h-3.5 w-3.5" /> വീണ്ടും ശ്രമിക്കുക
             </button>
           </div>
         )}
