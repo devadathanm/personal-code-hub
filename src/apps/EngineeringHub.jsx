@@ -1,11 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wrench, Calculator, Layers } from 'lucide-react';
 
 export default function EngineeringHub() {
-  // Calculation States
-  const [shape, setShape] = useState('rectangle');
-  const [dim1, setDim1] = useState(100); // Width or Outer Diameter (mm)
-  const [dim2, setDim2] = useState(50);  // Height or Inner Diameter (mm)
+  // LEVEL 3 STATE: Pull last session metrics from storage array or load standard engineering baselines
+  const [shape, setShape] = useState(() => {
+    return localStorage.getItem('hubos_eng_shape') || 'rectangle';
+  });
+
+  const [dim1, setDim1] = useState(() => {
+    return localStorage.getItem('hubos_eng_dim1') || '100';
+  });
+
+  const [dim2, setDim2] = useState(() => {
+    return localStorage.getItem('hubos_eng_dim2') || '50';
+  });
+
+  // LEVEL 3 SYNCHRONIZERS: Automatically mirror data states to local device storage layers on mutation
+  useEffect(() => {
+    localStorage.setItem('hubos_eng_shape', shape);
+  }, [shape]);
+
+  useEffect(() => {
+    localStorage.setItem('hubos_eng_dim1', dim1);
+  }, [dim1]);
+
+  useEffect(() => {
+    localStorage.setItem('hubos_eng_dim2', dim2);
+  }, [dim2]);
 
   // Math engine for cross-sectional properties
   const calculateProperties = () => {
@@ -63,7 +84,7 @@ export default function EngineeringHub() {
             <select 
               value={shape} 
               onChange={(e) => setShape(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition cursor-pointer"
             >
               <option value="rectangle">Solid Rectangle</option>
               <option value="pipe">Hollow Pipe / Cylinder</option>
@@ -79,7 +100,7 @@ export default function EngineeringHub() {
               type="number" 
               value={dim1}
               onChange={(e) => setDim1(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition font-mono"
             />
           </div>
 
@@ -92,7 +113,7 @@ export default function EngineeringHub() {
               type="number" 
               value={dim2}
               onChange={(e) => setDim2(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition font-mono"
             />
           </div>
         </div>
@@ -108,19 +129,19 @@ export default function EngineeringHub() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-900">
                 <span className="text-xs text-slate-500 block">Cross-Sectional Area</span>
-                <span className="text-xl font-mono font-bold text-emerald-400 mt-1 block">{results.area}</span>
+                <span className="text-xl font-mono font-bold text-emerald-400 mt-1 block select-all">{results.area}</span>
                 <span className="text-[10px] text-slate-600 font-mono">mm²</span>
               </div>
               
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-900">
                 <span className="text-xs text-slate-500 block">Moment of Inertia (Ix)</span>
-                <span className="text-xl font-mono font-bold text-blue-400 mt-1 block">{results.ix}</span>
+                <span className="text-xl font-mono font-bold text-blue-400 mt-1 block select-all">{results.ix}</span>
                 <span className="text-[10px] text-slate-600 font-mono">mm⁴</span>
               </div>
 
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-900">
                 <span className="text-xs text-slate-500 block">Moment of Inertia (Iy)</span>
-                <span className="text-xl font-mono font-bold text-purple-400 mt-1 block">{results.iy}</span>
+                <span className="text-xl font-mono font-bold text-purple-400 mt-1 block select-all">{results.iy}</span>
                 <span className="text-[10px] text-slate-600 font-mono">mm⁴</span>
               </div>
             </div>
