@@ -15,9 +15,10 @@ const INITIAL_CHESS_BOARD = [
   ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
 ];
 
+// FIX: Appended \uFE0E to prevent iPhones from turning these into un-colorable emojis
 const PIECE_ICONS = {
-  'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
-  'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚', 'P': '♟'
+  'r': '♜\uFE0E', 'n': '♞\uFE0E', 'b': '♝\uFE0E', 'q': '♛\uFE0E', 'k': '♚\uFE0E', 'p': '♟\uFE0E',
+  'R': '♜\uFE0E', 'N': '♞\uFE0E', 'B': '♝\uFE0E', 'Q': '♛\uFE0E', 'K': '♚\uFE0E', 'P': '♟\uFE0E'
 };
 
 const getValidChessMoves = (board, r, c) => {
@@ -65,7 +66,6 @@ const getValidChessMoves = (board, r, c) => {
 
   return moves;
 };
-
 
 export default function FunHub() {
   const [activeApp, setActiveApp] = useState('menu'); 
@@ -277,8 +277,8 @@ export default function FunHub() {
   // GAME 3: GRANDMASTER GRID (CHESS)
   // ==========================================
   const [chessBoard, setChessBoard] = useState(INITIAL_CHESS_BOARD);
-  const [chessTurn, setChessTurn] = useState('w'); // 'w' or 'b'
-  const [selectedSquare, setSelectedSquare] = useState(null); // [r, c]
+  const [chessTurn, setChessTurn] = useState('w'); 
+  const [selectedSquare, setSelectedSquare] = useState(null); 
   const [validMoves, setValidMoves] = useState([]);
   const [chessWinner, setChessWinner] = useState(null);
 
@@ -288,7 +288,6 @@ export default function FunHub() {
     const piece = chessBoard[r][c];
     const isWhite = piece ? piece === piece.toUpperCase() : null;
 
-    // Execute Move
     if (selectedSquare) {
       const isMoveValid = validMoves.some(([vr, vc]) => vr === r && vc === c);
       
@@ -298,15 +297,12 @@ export default function FunHub() {
         const movedPiece = newBoard[selR][selC];
         const targetPiece = newBoard[r][c];
 
-        // Win Condition: King Capture
         if (targetPiece === 'k') setChessWinner('White Wins!');
         if (targetPiece === 'K') setChessWinner('Black Wins!');
 
-        // Execute piece transfer
         newBoard[r][c] = movedPiece;
         newBoard[selR][selC] = null;
 
-        // Auto Pawn Promotion to Queen
         if (movedPiece === 'P' && r === 0) newBoard[r][c] = 'Q';
         if (movedPiece === 'p' && r === 7) newBoard[r][c] = 'q';
 
@@ -318,7 +314,6 @@ export default function FunHub() {
       }
     }
 
-    // Select Piece
     if (piece && ((chessTurn === 'w' && isWhite) || (chessTurn === 'b' && !isWhite))) {
       setSelectedSquare([r, c]);
       setValidMoves(getValidChessMoves(chessBoard, r, c));
@@ -360,7 +355,7 @@ export default function FunHub() {
       {/* HEADER */}
       <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-4 rounded-2xl flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.4)] shrink-0">
         <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-xl border shadow-inner ${activeApp === 'menu' ? 'bg-indigo-500/20 border-indigo-400/30' : activeApp === 'reflex' ? 'bg-rose-500/20 border-rose-400/30' : activeApp === 'chess' ? 'bg-amber-500/20 border-amber-400/30' : 'bg-emerald-500/20 border-emerald-400/30'}`}>
+          <div className={`p-2.5 rounded-xl border shadow-inner transition-colors duration-300 ${activeApp === 'menu' ? 'bg-indigo-500/20 border-indigo-400/30' : activeApp === 'reflex' ? 'bg-rose-500/20 border-rose-400/30' : activeApp === 'chess' ? 'bg-amber-500/20 border-amber-400/30' : 'bg-emerald-500/20 border-emerald-400/30'}`}>
             {activeApp === 'menu' && <Gamepad2 className="h-6 w-6 text-indigo-400" />}
             {activeApp === 'reflex' && <Zap className="h-6 w-6 text-rose-400" />}
             {activeApp === 'flappy' && <Bird className="h-6 w-6 text-emerald-400" />}
@@ -393,7 +388,7 @@ export default function FunHub() {
 
       {/* MENU SELECTOR */}
       {activeApp === 'menu' && (
-        <div className="flex-1 bg-slate-900/30 border border-slate-800/40 rounded-3xl p-4 sm:p-6 shadow-2xl">
+        <div className="flex-1 bg-slate-900/30 border border-slate-800/40 rounded-3xl p-4 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Available Engines</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -426,7 +421,7 @@ export default function FunHub() {
 
       {/* GAMES WRAPPER */}
       {activeApp !== 'menu' && (
-        <div className="w-full max-w-3xl mx-auto">
+        <div className="w-full max-w-3xl mx-auto animate-in fade-in duration-300">
           
           {/* REFLEX MATRIX */}
           {activeApp === 'reflex' && (
@@ -524,11 +519,11 @@ export default function FunHub() {
               <div className="w-full aspect-square border-4 border-slate-800 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] bg-slate-800 relative">
                 
                 {chessWinner && (
-                  <div className="absolute inset-0 z-20 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-                    <Crown className="h-16 w-16 text-amber-400 mb-4 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]" />
+                  <div className="absolute inset-0 z-20 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
+                    <Crown className="h-16 w-16 text-amber-400 mb-4 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)] animate-bounce" />
                     <h2 className="text-3xl font-black text-white drop-shadow-md">{chessWinner}</h2>
                     <p className="text-sm text-slate-400 mt-2">King Captured.</p>
-                    <button onClick={startChessGame} className="mt-8 py-3 px-8 bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-sm rounded-xl shadow-lg active:scale-95 cursor-pointer uppercase tracking-widest">Play Again</button>
+                    <button onClick={startChessGame} className="mt-8 py-3 px-8 bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-sm rounded-xl shadow-lg active:scale-95 cursor-pointer uppercase tracking-widest transition-transform hover:scale-105">Play Again</button>
                   </div>
                 )}
 
@@ -545,21 +540,28 @@ export default function FunHub() {
                           key={`${rIndex}-${cIndex}`} 
                           onClick={() => handleChessClick(rIndex, cIndex)}
                           className={`
-                            relative flex items-center justify-center cursor-pointer transition-colors
+                            relative flex items-center justify-center cursor-pointer transition-all duration-200 active:scale-90
                             ${isDark ? 'bg-[#5e7760]' : 'bg-[#e0edd4]'}
                             ${isSelected ? 'bg-[#baca44]' : ''}
-                            ${isValidTarget && !piece ? "after:content-[''] after:w-3 after:h-3 after:bg-black/20 after:rounded-full" : ''}
                           `}
                         >
+                          {/* Valid Move Indicator (Clean Arcade Dot) */}
+                          {isValidTarget && !piece && (
+                            <div className="w-3.5 h-3.5 bg-black/30 rounded-full shadow-inner animate-in zoom-in duration-150" />
+                          )}
+                          
                           {/* Capture Indicator Ring */}
-                          {isValidTarget && piece && <div className="absolute inset-0 border-4 border-black/20 rounded-full scale-90 pointer-events-none" />}
+                          {isValidTarget && piece && (
+                            <div className="absolute inset-0 border-[5px] border-black/20 rounded-full scale-[0.85] pointer-events-none animate-in zoom-in duration-150" />
+                          )}
                           
                           {/* Render Piece */}
                           {piece && (
                             <span 
                               className={`
-                                text-3xl sm:text-4xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] select-none pointer-events-none
-                                ${isWhitePiece ? 'text-white' : 'text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]'}
+                                text-[28px] sm:text-[36px] select-none pointer-events-none transition-transform duration-200
+                                ${isSelected ? 'scale-110 drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)]' : 'drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]'}
+                                ${isWhitePiece ? 'text-white' : 'text-[#0f172a] drop-shadow-[0_1px_1px_rgba(255,255,255,0.3)]'}
                               `}
                             >
                               {PIECE_ICONS[piece]}
